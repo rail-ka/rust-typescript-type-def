@@ -1,9 +1,12 @@
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV6};
+
 use crate::{
     emit::TypeDef,
+    enum_def,
     type_expr::{
-        DefinedTypeInfo, Ident, NativeTypeInfo, ObjectField, TypeArray,
-        TypeDefinition, TypeExpr, TypeInfo, TypeName, TypeObject, TypeString,
-        TypeTuple, TypeUnion,
+        enum_member, DefinedTypeInfo, Docs, Ident, NativeTypeInfo, ObjectField,
+        TypeArray, TypeDefinition, TypeExpr, TypeInfo, TypeName, TypeObject,
+        TypeString, TypeTuple, TypeUnion,
     },
 };
 
@@ -305,6 +308,64 @@ where
                 }),
             ],
         }),
+    });
+}
+
+impl TypeDef for Ipv4Addr {
+    const INFO: TypeInfo = TypeInfo::Defined(DefinedTypeInfo {
+        def: TypeDefinition {
+            docs: Docs::doc("An IPv4 address: \"127.0.0.1\""),
+            path: &[],
+            name: Ident("Ipv4Addr"),
+            generic_vars: &[],
+            def: TypeExpr::name("Uint8Array"),
+        },
+        generic_args: &[],
+    });
+}
+
+impl TypeDef for Ipv6Addr {
+    const INFO: TypeInfo = TypeInfo::Defined(DefinedTypeInfo {
+        def: TypeDefinition {
+            docs: Docs::doc("An IPv6 address: \"::1\""),
+            path: &[],
+            name: Ident("Ipv6Addr"),
+            generic_vars: &[],
+            def: TypeExpr::name("Uint8Array"),
+        },
+        generic_args: &[],
+    });
+}
+
+impl TypeDef for IpAddr {
+    const INFO: TypeInfo = TypeInfo::Defined(DefinedTypeInfo {
+        def: TypeDefinition {
+            docs: Docs::doc("An IP address, either IPv4 or IPv6"),
+            path: &[],
+            name: Ident("IpAddr"),
+            generic_vars: &[],
+            def: enum_def!(("V4": Ipv4Addr), ("V6": Ipv6Addr)),
+        },
+        generic_args: &[],
+    });
+}
+
+impl TypeDef for SocketAddrV6 {
+    const INFO: TypeInfo = TypeInfo::Defined(DefinedTypeInfo {
+        def: TypeDefinition {
+            docs: Docs::doc("An IPv6 socket address: \"[2001:db8::1]:8080\""),
+            path: &[],
+            name: Ident("SocketAddrV6"),
+            generic_vars: &[],
+            def: TypeExpr::Tuple(TypeTuple {
+                docs: None,
+                elements: &[
+                    TypeExpr::Ref(&Ipv6Addr::INFO),
+                    TypeExpr::Ref(&u16::INFO),
+                ],
+            }),
+        },
+        generic_args: &[],
     });
 }
 

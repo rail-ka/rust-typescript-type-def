@@ -116,6 +116,16 @@ pub struct TypeString {
     pub value: &'static str,
 }
 
+impl TypeString {
+    /// Create new TypeString without docs
+    pub const fn new(name: &'static str) -> Self {
+        TypeString {
+            docs: None,
+            value: name,
+        }
+    }
+}
+
 /// A TypeScript tuple type.
 ///
 /// In TypeScript, tuples are represented as constant-length arrays where each
@@ -233,6 +243,13 @@ pub struct Ident(pub &'static str);
 #[derive(Debug, Clone, Copy)]
 pub struct Docs(pub &'static str);
 
+impl Docs {
+    /// new Docs with text
+    pub const fn doc(text: &'static str) -> Option<Self> {
+        Some(Docs(text))
+    }
+}
+
 /// An alias for lists used in type expressions.
 pub type List<T> = &'static [T];
 
@@ -241,6 +258,19 @@ impl TypeExpr {
     /// identifier.
     pub const fn ident(ident: Ident) -> Self {
         Self::Name(TypeName::ident(ident))
+    }
+
+    /// new TypeExpr::Name with empty path and generic_args
+    pub const fn name(name: &'static str) -> Self {
+        Self::Name(TypeName::ident(Ident(name)))
+    }
+
+    /// new TypeExpr::String with empty docs
+    pub const fn str_lit(ty: &'static str) -> Self {
+        Self::String(TypeString {
+            docs: None,
+            value: ty,
+        })
     }
 }
 
@@ -253,4 +283,44 @@ impl TypeName {
             generic_args: &[],
         }
     }
+}
+
+/// new TypeObject::fields for enum member
+pub const fn enum_member(
+    ty: TypeExpr,
+    ty_name: &'static str,
+) -> [ObjectField; 2] {
+    let variant = ObjectField {
+        docs: None,
+        name: TypeString::new("type"),
+        optional: false,
+        r#type: TypeExpr::str_lit(ty_name),
+    };
+    let value = ObjectField {
+        docs: None,
+        name: TypeString::new("data"),
+        optional: false,
+        r#type: ty,
+    };
+    [variant, value]
+}
+
+/// create TypeExpr::Union with ("variant_name": type) variants
+/// example: `enum_def!(("V4": Ipv4Addr), ("V6": Ipv6Addr))`
+#[macro_export]
+macro_rules! enum_def {
+    ($( ($y: literal: $x:ty) ),+) => {
+        TypeExpr::Union(TypeUnion {
+            docs: None,
+            members: &[
+                $(
+                    TypeExpr::Object(TypeObject {
+                        docs: None,
+                        index_signature: None,
+                        fields: &enum_member(TypeExpr::Ref(&<$x>::INFO), $y),
+                    }),
+                )*
+            ],
+        })
+    };
 }
